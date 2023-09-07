@@ -1,0 +1,9 @@
+{
+	"name": "kasmo-df",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "b230d4db-3547-4f0c-adae-5c4296d12024",
+		"tenantId": "979ffdff-332b-406c-8644-6d8db569225f"
+	}
+}

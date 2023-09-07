@@ -1,0 +1,62 @@
+{
+	"name": "ds_tgt_product",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "PRODUCT_ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "PRODUCT_NAME",
+				"type": "varchar"
+			},
+			{
+				"name": "MODEL_YEAR",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "LIST_PRICE",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "CATEGORY_NAME",
+				"type": "varchar"
+			},
+			{
+				"name": "BRAND_NAME",
+				"type": "varchar"
+			},
+			{
+				"name": "START_DATE",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "END_DATE",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "IS_ACTIVE",
+				"type": "char"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DIM_PRODUCT1"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

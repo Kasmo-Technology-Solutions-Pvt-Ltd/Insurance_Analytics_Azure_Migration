@@ -1,0 +1,217 @@
+{
+	"name": "df_incr",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_src_product",
+						"type": "DatasetReference"
+					},
+					"name": "srcProduct"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_src_catageory",
+						"type": "DatasetReference"
+					},
+					"name": "srcCatageory"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_src_brands",
+						"type": "DatasetReference"
+					},
+					"name": "srcBrand"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_tgt_product",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_tgt_product",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_tgt_product",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "joinsrcProductAndsrcCatageory"
+				},
+				{
+					"name": "joinsrcProductAndsrcCatageoryAndsrcBrand"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "sort1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "sort2"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "lookup1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          product_id as integer,",
+				"          product_name as string,",
+				"          brand_id as integer,",
+				"          category_id as integer,",
+				"          model_year as short,",
+				"          list_price as decimal(10,2)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> srcProduct",
+				"source(output(",
+				"          category_id as integer,",
+				"          category_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> srcCatageory",
+				"source(output(",
+				"          brand_id as integer,",
+				"          brand_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> srcBrand",
+				"source(output(",
+				"          PRODUCT_ID as integer,",
+				"          PRODUCT_NAME as string,",
+				"          MODEL_YEAR as integer,",
+				"          LIST_PRICE as decimal(10,2),",
+				"          CATEGORY_NAME as string,",
+				"          BRAND_NAME as string,",
+				"          START_DATE as timestamp,",
+				"          END_DATE as timestamp,",
+				"          IS_ACTIVE as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"srcProduct, srcCatageory join(srcProduct@category_id == srcCatageory@category_id,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinsrcProductAndsrcCatageory",
+				"joinsrcProductAndsrcCatageory, srcBrand join(srcProduct@brand_id == srcBrand@brand_id,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinsrcProductAndsrcCatageoryAndsrcBrand",
+				"joinsrcProductAndsrcCatageoryAndsrcBrand select(mapColumn(",
+				"          product_id,",
+				"          product_name,",
+				"          model_year,",
+				"          list_price,",
+				"          category_name,",
+				"          brand_name",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sort(asc(product_id, false)) ~> sort1",
+				"sort1 derive(srchash = sha1(product_id,product_name)) ~> derivedColumn1",
+				"lookup1 split(isNull(source1@PRODUCT_ID),",
+				"     !isNull(source1@PRODUCT_ID)&&notEquals(srchash, tgthash),",
+				"     disjoint: false) ~> split1@(insert, update, no)",
+				"source1 sort(asc(PRODUCT_ID, false)) ~> sort2",
+				"sort2 derive(tgthash = sha1(PRODUCT_ID,PRODUCT_NAME)) ~> derivedColumn2",
+				"derivedColumn1, derivedColumn2 lookup(select1@product_id == source1@PRODUCT_ID,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"split1@insert sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          PRODUCT_ID as integer,",
+				"          PRODUCT_NAME as string,",
+				"          MODEL_YEAR as integer,",
+				"          LIST_PRICE as decimal(10,2),",
+				"          CATEGORY_NAME as string,",
+				"          BRAND_NAME as string,",
+				"          START_DATE as timestamp,",
+				"          END_DATE as timestamp,",
+				"          IS_ACTIVE as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          PRODUCT_ID = product_id,",
+				"          PRODUCT_NAME = product_name,",
+				"          MODEL_YEAR = model_year,",
+				"          LIST_PRICE = list_price,",
+				"          CATEGORY_NAME = category_name,",
+				"          BRAND_NAME = brand_name",
+				"     )) ~> sink1",
+				"split1@update sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          PRODUCT_ID as integer,",
+				"          PRODUCT_NAME as string,",
+				"          MODEL_YEAR as integer,",
+				"          LIST_PRICE as decimal(10,2),",
+				"          CATEGORY_NAME as string,",
+				"          BRAND_NAME as string,",
+				"          START_DATE as timestamp,",
+				"          END_DATE as timestamp,",
+				"          IS_ACTIVE as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          PRODUCT_ID = product_id,",
+				"          PRODUCT_NAME = product_name,",
+				"          MODEL_YEAR = model_year,",
+				"          LIST_PRICE = list_price,",
+				"          CATEGORY_NAME = category_name,",
+				"          BRAND_NAME = brand_name",
+				"     )) ~> sink2"
+			]
+		}
+	}
+}
